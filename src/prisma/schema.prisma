@@ -1,0 +1,110 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Meeting {
+  id            String   @id @default(uuid())
+  roomName      String   @unique
+  status        MeetingStatus @default(CREATED)
+
+  startedAt     DateTime?
+  endedAt       DateTime?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  participants  MeetingParticipant[]
+  recordings    Recording[]
+  events        MeetingEvent[]
+}
+
+model MeetingParticipant {
+  id          String   @id @default(uuid())
+  meetingId  String
+
+  userId     String
+  role       ParticipantRole
+
+  joinedAt   DateTime?
+  leftAt     DateTime?
+
+  meeting    Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+}
+
+model Recording {
+  id          String   @id @default(uuid())
+  meetingId  String
+
+  status     RecordingStatus @default(PENDING)
+  filePath   String?
+  duration   Int?        // segundos
+  size       BigInt?
+  hash         String?
+  errorMessage String?
+  startedAt  DateTime?
+  endedAt    DateTime?
+
+  meeting    Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+}
+
+model MeetingEvent {
+  id         String   @id @default(uuid())
+  meetingId String
+
+  type       MeetingEventType
+  payload    Json?
+
+  meeting    Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+/* ENUMS */
+
+enum MeetingStatus {
+  CREATED
+  IN_PROGRESS
+  RECORDING
+  FINISHED
+  CANCELLED
+}
+
+enum ParticipantRole {
+  MEDIC
+  PATIENT
+}
+
+enum RecordingStatus {
+  PENDING
+  RECORDING
+  COMPLETED
+  FAILED
+}
+
+enum MeetingEventType {
+  MEETING_CREATED
+  USER_JOINED
+  USER_LEFT
+  RECORDING_STARTED
+  RECORDING_STOPPED
+  MEETING_FINISHED
+}
+
+enum RecordingStatus {
+  STARTING
+  RECORDING
+  STOPPING
+  FINISHED
+  READY
+  FAILED
+}
+
