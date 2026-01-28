@@ -6,13 +6,12 @@
 
 generator client {
   provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
 }
-
 
 model Meeting {
   id            String   @id @default(uuid())

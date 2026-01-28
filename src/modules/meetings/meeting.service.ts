@@ -40,37 +40,38 @@ const ERROR_MESSAGES = {
   NO_ACTIVE_RECORDING: 'No hay ninguna grabación activa para detener',
 } as const;
 
-/**
- * Crea una nueva reunión entre un médico y un paciente
- */
-export const createMeeting = async ({
-  medicId,
-  patientId,
-}: CreateMeetingParams) => {
-  const roomName = `meeting-${crypto.randomUUID()}`;
+export class MeetingsService {
 
-  return prisma.meeting.create({
-    data: {
-      roomName,
-      participants: {
-        create: [
-          { userId: medicId, role: PARTICIPANT_ROLE.MEDIC },
-          { userId: patientId, role: PARTICIPANT_ROLE.PATIENT },
-        ],
-      },
-      events: {
-        create: {
-          type: EVENT_TYPE.MEETING_CREATED,
+  /**
+   * Crea una nueva reunión entre un médico y un paciente
+   */
+  static async createMeeting({
+    medicId,
+    patientId,
+  }: CreateMeetingParams) {
+    const roomName = `meeting-${crypto.randomUUID()}`;
+
+    return prisma.meeting.create({
+      data: {
+        roomName,
+        participants: {
+          create: [
+            { userId: medicId, role: PARTICIPANT_ROLE.MEDIC },
+            { userId: patientId, role: PARTICIPANT_ROLE.PATIENT },
+          ],
+        },
+        events: {
+          create: {
+            type: EVENT_TYPE.MEETING_CREATED,
+          },
         },
       },
-    },
-    include: {
-      participants: true,
-    },
-  });
-};
+      include: {
+        participants: true,
+      },
+    });
+  }
 
-export class MeetingsService {
   /**
    * Obtiene una reunión por ID incluyendo sus grabaciones
    */
