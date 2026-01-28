@@ -4,7 +4,7 @@ import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 
 // Conexion
-//import prisma from '../lib/prisma.ts';
+import prisma from '../lib/prisma.ts';
 // Rutas
 import {createRouter} from '../routes/index.ts';
 
@@ -23,7 +23,7 @@ export class Server {
     this.rateLimiter();
   }
 
-  /*private async dbConnection() {
+  private async dbConnection() {
     try {
       await prisma.$connect();
       console.log('✅ Prisma conectado a PostgreSQL');
@@ -31,7 +31,7 @@ export class Server {
       console.error('❌ Error conectando Prisma:', error);
       process.exit(1);
     }
-  }*/
+  }
 
   private middlewares() {
     this.app.use(cors());
