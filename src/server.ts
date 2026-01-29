@@ -1,6 +1,4 @@
 import 'dotenv/config';
-
-
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -9,8 +7,7 @@ import rateLimit from 'express-rate-limit';
 // Conexion
 import prisma from '../lib/prisma.ts';
 // Rutas
-import {createRouter} from '../routes/index.ts';
-
+import { createRouter } from '../routes/index.ts';
 
 export class Server {
   private app: ReturnType<typeof express>;
@@ -52,7 +49,7 @@ export class Server {
     this.app.use(limiter);
   }
 
-  private async routes () {
+  private async routes() {
     this.app.use('/api', await createRouter());
   }
 
@@ -62,7 +59,6 @@ export class Server {
     });
   }
 }
-
 
 const server = new Server();
 server.listen();

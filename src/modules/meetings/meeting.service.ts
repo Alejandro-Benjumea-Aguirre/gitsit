@@ -1,5 +1,6 @@
-import prisma from '../../lib/prisma';
-import { JibriService } from '../recordings/jibri.service';
+import prisma from '../../lib/prisma.js';
+import { JibriService } from '../recordings/jibri.service.js';
+import { generateJitsiToken } from '../../security/generateJWT.js';
 
 // Tipos para mejor type safety
 interface CreateMeetingParams {
@@ -41,17 +42,24 @@ const ERROR_MESSAGES = {
 } as const;
 
 export class MeetingsService {
+  /**
+   * Crea un token para la reunion
+   */
+  static async createMeetingToken(id: string, user: string) {
+    return generateJitsiToken({
+      meetingId: id,
+      userId: user,
+      isModerator: false,
+    });
+  }
 
   /**
    * Crea una nueva reunión entre un médico y un paciente
    */
-  static async createMeeting({
-    medicId,
-    patientId,
-  }: CreateMeetingParams) {
+  static async createMeeting({ medicId, patientId }: CreateMeetingParams) {
     const roomName = `meeting-${crypto.randomUUID()}`;
 
-    return prisma.meeting.create({
+    const meeting: string = prisma.meeting.create({
       data: {
         roomName,
         participants: {
@@ -70,6 +78,8 @@ export class MeetingsService {
         participants: true,
       },
     });
+
+    return meeting;
   }
 
   /**

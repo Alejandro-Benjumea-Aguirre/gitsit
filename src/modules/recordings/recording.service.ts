@@ -15,9 +15,7 @@ type JibriEventPayload = {
 };
 
 export class RecordingsService {
-
   static async handleJibriEvent(payload: JibriEventPayload) {
-
     const { recordingId, status, filePath } = payload;
 
     const recording = await prisma.recording.findUnique({
@@ -30,9 +28,7 @@ export class RecordingsService {
 
     if (status === 'FINISHED') {
       try {
-        const validation = await this.validateRecordingFile(
-          filePath
-        );
+        const validation = await this.validateRecordingFile(filePath);
 
         const [hash, duration] = await Promise.all([
           this.generateSHA256(filePath),
@@ -50,9 +46,7 @@ export class RecordingsService {
             endedAt: new Date(),
           },
         });
-
       } catch (error: any) {
-
         await prisma.recording.update({
           where: { id: recording.id },
           data: {
@@ -103,7 +97,7 @@ export class RecordingsService {
       const stream = fs.createReadStream(filePath);
 
       stream.on('error', reject);
-      stream.on('data', chunk => hash.update(chunk));
+      stream.on('data', (chunk) => hash.update(chunk));
       stream.on('end', () => resolve(hash.digest('hex')));
     });
   }
