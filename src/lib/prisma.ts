@@ -1,19 +1,37 @@
-import { PrismaClient } from '@prisma/client';
-import config from '../prisma.config';
+import { PrismaClient, Prisma } from '@prisma/client';
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
+// Tipos globales
+declare global {
+  var prisma: PrismaClient | undefined;
+}
+
+// Log levels según el entorno
+const logLevels: Prisma.LogLevel[] = 
+  process.env.NODE_ENV === 'development'
+    ? ['query', 'info', 'warn', 'error']
+    : ['error'];
+
+// Crear cliente
+const createPrismaClient = () => {
+  return new PrismaClient({
+    log: logLevels,
+    errorFormat: process.env.NODE_ENV === 'development' ? 'pretty' : 'minimal',
+  });
 };
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    ...config,
-    log: ['query', 'error', 'warn'],
-  });
+// Singleton pattern
+export const prisma = globalThis.prisma ?? createPrismaClient();
 
+// En desarrollo, guardar la instancia globalmente
 if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
+  globalThis.prisma = prisma;
+}
+
+// Manejo de cierre graceful
+if (process.env.NODE_ENV === 'production') {
+  process.on('beforeExit', async () => {
+    await prisma.$disconnect();
+  });
 }
 
 export default prisma;

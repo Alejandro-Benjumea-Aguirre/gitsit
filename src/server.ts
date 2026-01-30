@@ -5,9 +5,9 @@ import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 
 // Conexion
-import prisma from '../lib/prisma.ts';
+import prisma from './lib/prisma.ts';
 // Rutas
-import { createRouter } from '../routes/index.ts';
+import { createRouter } from './routes/index.ts';
 
 export class Server {
   private app: ReturnType<typeof express>;
