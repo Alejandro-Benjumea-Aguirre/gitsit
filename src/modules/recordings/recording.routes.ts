@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { jibriWebhook } from './recordings.controller';
+import { jibriWebhook } from './recording.controller.js';
 
 const router = Router();
 

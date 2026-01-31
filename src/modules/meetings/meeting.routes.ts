@@ -6,7 +6,7 @@ const router = Router();
 router.post('/token', controller.token);
 router.post('/', controller.create);
 
-router.post('/:id/start-recording', startRecording);
-router.post('/:id/stop-recording', stopRecording);
+router.post('/:id/start-recording', controller.startRecording);
+router.post('/:id/stop-recording', controller.stopRecording);
 
 export default router;

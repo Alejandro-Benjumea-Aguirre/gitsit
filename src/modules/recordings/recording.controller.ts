@@ -1,5 +1,5 @@
-import { Request, Response } from 'express';
-import { RecordingsService } from './recordings.service';
+import type { Request, Response } from 'express';
+import { RecordingsService } from './recording.service.ts';
 
 export const jibriWebhook = async (req: Request, res: Response) => {
   try {

@@ -1,27 +1,41 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { MeetingsService } from './meeting.service.ts';
 import { success, error } from '../../utils/response.ts';
+import type {JoinMeetingDTO} from '../../types/jitsi.types.js';
 
-export const token = async (req: Request, res: Response) => {
+export const create = async (req: Request, res: Response) => {
   try {
-    const { meetingId, user } = req.body;
+    const { medicId, patientId } = req.body;
 
-    const token = await MeetingsService.createMeetingToken(meetingId, user);
+    if (!medicId || !patientId) {
+      return error(req, res, 'medicId y patientId son requeridos', 400);
+    }
 
-    success(req, res, token, 200);
+    const meeting = await MeetingsService.createMeeting({ medicId, patientId });
+
+    success(req, res, meeting, 201);
   } catch (e) {
     console.error(e);
     error(req, res, 'Error creando la reunión', 500);
   }
 };
 
-export const create = async (req: Request, res: Response) => {
+export const token = async (req: Request, res: Response) => {
   try {
-    const { medicId, patientId } = req.body;
+    const { meetingId, user } = req.body;
 
-    const meeting = await MeetingsService.createMeeting({ medicId, patientId });
+    if (!user) {
+      return error(req, res, 'userId es requerido', 400);
+    }
 
-    success(req, res, meeting, 201);
+    const data = {
+      meetingId,
+      user,
+    };
+
+    const token = await MeetingsService.createMeetingToken(data);
+
+    success(req, res, token, 200);
   } catch (e) {
     console.error(e);
     error(req, res, 'Error creando la reunión', 500);
@@ -51,5 +65,39 @@ export const stopRecording = async (req: Request, res: Response) => {
   } catch (e) {
     console.error(e);
     return error(req, res, 'Error stopping recording', 400);
+  }
+};
+
+/**
+ * GET /api/meetings/:meetingId
+ * Obtener información de reunión
+ */
+export const getMeeting = async (req: Request, res: Response) => {
+  try {
+    const { meetingId, userId } = req.query;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'userId es requerido',
+      });
+    }
+
+    const meeting = await MeetingsService.getMeeting(
+      meetingId as string,
+      userId as string
+    );
+
+    return res.status(200).json({
+      success: true,
+      data: meeting,
+    });
+  } catch (error) {
+    console.error('Error obteniendo reunión:', error);
+
+    return res.status(404).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Reunión no encontrada',
+    });
   }
 };

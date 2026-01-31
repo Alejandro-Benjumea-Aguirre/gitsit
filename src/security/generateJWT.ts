@@ -1,24 +1,31 @@
 import jwt from 'jsonwebtoken';
-
-const APP_ID = process.env.JITSI_APP_ID;
-const APP_SECRET = process.env.JITSI_SECRET!;
+import { jitsiConfig } from '../config/jitsi.config.ts';
+import type { JitsiJWTPayload } from '../types/jitsi.types.ts';
 
 interface GenerateJitsiTokenParams {
   userId: string;
   meetingId: string;
   isModerator: boolean;
+  features?: {
+    recording?: boolean;
+    livestreaming?: boolean;
+    transcription?: boolean;
+  };
 }
 
 export function generateJitsiToken({
   userId,
   meetingId,
   isModerator = false,
+  features,
 }: GenerateJitsiTokenParams) {
+
   const now = Math.floor(Date.now() / 1000);
-  const payload = {
-    aud: 'jitsi',
-    iss: APP_ID,
-    sub: 'meet.tudominio.com',
+
+  const payload: JitsiJWTPayload = {
+    aud: jitsiConfig.jwt.appId,
+    iss: jitsiConfig.jwt.issuer,
+    sub: jitsiConfig.domain,
     room: meetingId,
     exp: now + 60 * 10, // 10 minutos
     nbf: now - 10,
@@ -27,15 +34,14 @@ export function generateJitsiToken({
         id: userId,
         moderator: isModerator,
       },
-      features: {
-        livestreaming: false,
-        recording: isModerator,
-        transcription: false,
-      },
+      features: features || jitsiConfig.features,
     },
   };
 
-  return jwt.sign(payload, APP_SECRET, {
+  const token = jwt.sign(payload, jitsiConfig.jwt.appSecret, {
     algorithm: 'HS256',
+    expiresIn: jitsiConfig.jwt.expiresIn,
   });
+
+  return token;
 }

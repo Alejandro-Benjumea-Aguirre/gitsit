@@ -1,21 +1,8 @@
 import prisma from '../../lib/prisma.js';
 import { JibriService } from '../recordings/jibri.service.js';
 import { generateJitsiToken } from '../../security/generateJWT.js';
-
-// Tipos para mejor type safety
-interface CreateMeetingParams {
-  medicId: string;
-  patientId: string;
-}
-
-interface StartRecordingParams {
-  roomName: string;
-  recordingId: string;
-}
-
-interface StopRecordingParams {
-  recordingId: string;
-}
+import { jitsiConfig } from '../../config/jitsi.config.ts';
+import type { CreateMeetingDTO, JoinMeetingDTO } from '../types/jitsi.types';
 
 // Constantes para evitar magic strings
 const RECORDING_STATUS = {
@@ -43,23 +30,12 @@ const ERROR_MESSAGES = {
 
 export class MeetingsService {
   /**
-   * Crea un token para la reunion
-   */
-  static async createMeetingToken(id: string, user: string) {
-    return generateJitsiToken({
-      meetingId: id,
-      userId: user,
-      isModerator: false,
-    });
-  }
-
-  /**
    * Crea una nueva reunión entre un médico y un paciente
    */
-  static async createMeeting({ medicId, patientId }: CreateMeetingParams) {
-    const roomName = `meeting-${crypto.randomUUID()}`;
+  static async createMeeting({ medicId, patientId }: CreateMeetingDTO) {
+    const roomName = `${jitsiConfig.roomPrefix}-${crypto.randomUUID()}`;
 
-    const meeting: string = prisma.meeting.create({
+    const meeting = await prisma.meeting.create({
       data: {
         roomName,
         participants: {
@@ -78,6 +54,110 @@ export class MeetingsService {
         participants: true,
       },
     });
+
+    return meeting;
+  }
+
+  /**
+   * Crea un token para la reunion
+   */
+  static async createMeetingToken(data: JoinMeetingDTO) {
+    const { meetingId, userId } = data;
+
+    // Verificar que la reunión existe
+    const meeting = await prisma.meeting.findUnique({
+      where: { id: meetingId },
+      include: {
+        participants: {
+          where: { userId },
+        },
+      },
+    });
+
+    if (!meeting) {
+      throw new Error('Reunión no encontrada');
+    }
+
+    // Verificar que el usuario es participante
+    const participant = meeting.participants[0];
+    if (!participant) {
+      throw new Error('Usuario no autorizado para esta reunión');
+    }
+
+    const isModerator = participant.role === 'MEDIC';
+
+    const token = generateJitsiToken({
+      meetingId,
+      userId,
+      isModerator,
+      features: {
+        recording: isModerator, // Solo el médico puede grabar
+        livestreaming: false,
+        transcription: true,
+      },
+    });
+
+    const meetingUrl = this.generateMeetingUrl(meeting.roomName, token);
+
+    // Registrar evento de ingreso
+    await prisma.meetingEvent.create({
+      data: {
+        type: 'USER_JOINED',
+        meetingId: meeting.id,
+        metadata: {
+          userId,
+          role: participant.role,
+        },
+      },
+    });
+
+    return {
+      meeting: {
+        id: meeting.id,
+        roomName: meeting.roomName,
+      },
+      token,
+      meetingUrl,
+      isModerator,
+      expiresIn: jitsiConfig.jwt.expiresIn,
+    };
+  }
+
+  /**
+   * Genera URL completa de Jitsi con token
+   */
+  static generateMeetingUrl(roomName: string, token: string): string {
+    return `https://${jitsiConfig.domain}/${roomName}?jwt=${token}`;
+  }
+
+  /**
+   * Obtener información de una reunión
+   */
+  static async getMeeting(meetingId: string, userId: string) {
+    const meeting = await prisma.meeting.findFirst({
+      where: {
+        id: meetingId,
+        participants: {
+          some: {
+            userId,
+          },
+        },
+      },
+      include: {
+        participants: true,
+        recordings: true,
+        events: {
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: 10,
+        },
+      },
+    });
+
+    if (!meeting) {
+      throw new Error('Reunión no encontrada o sin acceso');
+    }
 
     return meeting;
   }

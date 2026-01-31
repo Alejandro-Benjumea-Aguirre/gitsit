@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import type {Request, Response} from 'express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
@@ -23,8 +24,12 @@ export const createRouter = async () => {
     }
   }
 
-  router.use('*', (_, res) => {
-    res.status(404).json({ error: 'Not found' });
+  router.use((req: Request, res: Response) => {
+    res.status(404).json({
+      success: false,
+      error: 'Ruta no encontrada',
+      path: req.originalUrl,
+    });
   });
 
   return router;
