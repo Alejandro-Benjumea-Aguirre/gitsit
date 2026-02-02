@@ -7,7 +7,7 @@ declare global {
 
 // Log levels según el entorno
 const logLevels: Prisma.LogLevel[] = 
-  process.env.NODE_ENV === 'development'
+  process.env.NODE_ENV === 'developmen'
     ? ['query', 'info', 'warn', 'error']
     : ['error'];
 

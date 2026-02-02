@@ -1,0 +1,33 @@
+{
+  "error": false,
+  "status": 201,
+  "body": {
+    "id": "9ae83152-fa2b-4b0f-b291-b420d8ba9f67",
+    "roomName": "medical-e3829742-f20b-4e7f-adac-b6d935209f66",
+    "status": "CREATED",
+    "startedAt": null,
+    "endedAt": null,
+    "createdAt": "2026-02-02T19:26:56.842Z",
+    "updatedAt": "2026-02-02T19:26:56.842Z",
+    "participants": [
+      {
+        "id": "37063c19-5a52-49dd-856c-305e1624dc7f",
+        "meetingId": "9ae83152-fa2b-4b0f-b291-b420d8ba9f67",
+        "userId": "101999550",
+        "role": "MEDIC",
+        "joinedAt": null,
+        "leftAt": null,
+        "createdAt": "2026-02-02T19:26:56.842Z"
+      },
+      {
+        "id": "94b215d4-5dd1-449b-99e9-18aa01d8c380",
+        "meetingId": "9ae83152-fa2b-4b0f-b291-b420d8ba9f67",
+        "userId": "201001205556",
+        "role": "PATIENT",
+        "joinedAt": null,
+        "leftAt": null,
+        "createdAt": "2026-02-02T19:26:56.842Z"
+      }
+    ]
+  }
+}

@@ -3,6 +3,7 @@ import { JibriService } from '../recordings/jibri.service.js';
 import { generateJitsiToken } from '../../security/generateJWT.js';
 import { jitsiConfig } from '../../config/jitsi.config.ts';
 import type { CreateMeetingDTO, JoinMeetingDTO } from '../types/jitsi.types';
+import {success, error} from '../../utils/response.ts';
 
 // Constantes para evitar magic strings
 const RECORDING_STATUS = {
@@ -62,65 +63,98 @@ export class MeetingsService {
    * Crea un token para la reunion
    */
   static async createMeetingToken(data: JoinMeetingDTO) {
-    const { meetingId, userId } = data;
+    try {
+      const { meetingId, userId } = data;
 
-    // Verificar que la reunión existe
-    const meeting = await prisma.meeting.findUnique({
-      where: { id: meetingId },
-      include: {
-        participants: {
-          where: { userId },
+      // Verificar que la reunión existe
+      const meeting = await prisma.meeting.findUnique({
+        where: { id: meetingId },
+        include: {
+          participants: {
+            where: { userId },
+          },
         },
-      },
-    });
+      });
 
-    if (!meeting) {
-      throw new Error('Reunión no encontrada');
-    }
+      if (!meeting) {
+        throw new Error('Reunión no encontrada');
+      }
 
-    // Verificar que el usuario es participante
-    const participant = meeting.participants[0];
-    if (!participant) {
-      throw new Error('Usuario no autorizado para esta reunión');
-    }
+      // Verificar que el usuario es participante
+      const participant = meeting.participants[0];
+      if (!participant) {
+        throw new Error('Usuario no autorizado para esta reunión');
+      }
 
-    const isModerator = participant.role === 'MEDIC';
+      const room = meeting.roomName;
 
-    const token = generateJitsiToken({
-      meetingId,
-      userId,
-      isModerator,
-      features: {
-        recording: isModerator, // Solo el médico puede grabar
-        livestreaming: false,
-        transcription: true,
-      },
-    });
+      const isModerator = participant.role === 'MEDIC';
 
-    const meetingUrl = this.generateMeetingUrl(meeting.roomName, token);
+      const generatedUserName = this.generateUserName(participant.role, userId);
+      const generatedUserEmail = this.generateUserEmail(userId);
 
-    // Registrar evento de ingreso
-    await prisma.meetingEvent.create({
-      data: {
-        type: 'USER_JOINED',
-        meetingId: meeting.id,
-        metadata: {
-          userId,
-          role: participant.role,
+      const token = generateJitsiToken({
+        meetingId: room,
+        userId,
+        userName: generatedUserName,
+        userEmail: generatedUserEmail,
+        isModerator,
+        features: {
+          recording: isModerator, // Solo el médico puede grabar
+          livestreaming: false,
+          transcription: true,
         },
-      },
-    });
+      });
 
-    return {
-      meeting: {
-        id: meeting.id,
-        roomName: meeting.roomName,
-      },
-      token,
-      meetingUrl,
-      isModerator,
-      expiresIn: jitsiConfig.jwt.expiresIn,
+      const meetingUrl = this.generateMeetingUrl(meeting.roomName, token);
+
+      // Registrar evento de ingreso
+      await prisma.meetingEvent.create({
+        data: {
+          type: 'USER_JOINED',
+          meetingId: meeting.id,
+          payload: {
+            userId,
+            role: participant.role,
+          },
+        },
+      });
+
+      return {
+        meeting: {
+          id: meeting.id,
+          roomName: meeting.roomName,
+        },
+        token,
+        meetingUrl,
+        isModerator,
+        expiresIn: jitsiConfig.jwt.expiresIn,
+      };
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  }
+
+  /**
+   * Genera un nombre de usuario basado en el rol
+   */
+  private static generateUserName(role: string, userId: string): string {
+    const roleNames: { [key: string]: string } = {
+      'MEDIC': 'Doctor',
+      'PATIENT': 'Paciente',
+      'ADMIN': 'Administrador',
     };
+
+    const roleName = roleNames[role] || 'Usuario';
+    return `${roleName} ${userId.substring(0, 6)}`;
+  }
+
+  /**
+   * Genera un email basado en el userId
+   */
+  private static generateUserEmail(userId: string): string {
+    return `user-${userId}@medical.local`;
   }
 
   /**

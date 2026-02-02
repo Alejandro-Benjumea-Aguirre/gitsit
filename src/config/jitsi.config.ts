@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const jitsiConfig = {
-  domain: process.env.JITSI_DOMAIN || 'alejodev.cloud',
+  domain: process.env.JITSI_DOMAIN || 'alejodev.cloud:8443',
   roomPrefix: process.env.JITSI_ROOM_PREFIX || 'medical',
   jwt: {
     appId: process.env.JWT_APP_ID || 'apijitsi',

@@ -13,6 +13,8 @@ export interface JitsiJWTPayload {
   context: {
     user: {
       id: string;
+      name: string;
+      email: string;
       moderator?: boolean;
     };
     features?: {

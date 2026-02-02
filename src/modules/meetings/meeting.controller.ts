@@ -22,15 +22,15 @@ export const create = async (req: Request, res: Response) => {
 
 export const token = async (req: Request, res: Response) => {
   try {
-    const { meetingId, user } = req.body;
+    const { meetingId, userId } = req.body;
 
-    if (!user) {
+    if (!userId) {
       return error(req, res, 'userId es requerido', 400);
     }
 
     const data = {
       meetingId,
-      user,
+      userId,
     };
 
     const token = await MeetingsService.createMeetingToken(data);
@@ -38,7 +38,7 @@ export const token = async (req: Request, res: Response) => {
     success(req, res, token, 200);
   } catch (e) {
     console.error(e);
-    error(req, res, 'Error creando la reunión', 500);
+    error(req, res, 'Error generando el token', 500);
   }
 };
 
