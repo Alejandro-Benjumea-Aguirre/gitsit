@@ -44,7 +44,7 @@ export function generateJitsiToken({
     },
   };
 
-  console.log(payload);
+  //console.log(payload);
 
   const token = jwt.sign(payload, jitsiConfig.jwt.appSecret, {
     algorithm: 'HS256',

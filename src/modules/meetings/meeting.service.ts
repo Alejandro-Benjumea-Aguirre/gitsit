@@ -1,5 +1,5 @@
 import prisma from '../../lib/prisma.js';
-import { JibriService } from '../recordings/jibri.service.js';
+import { JibriAPIService } from '../recordings/jibri.service.js';
 import { generateJitsiToken } from '../../security/generateJWT.js';
 import { jitsiConfig } from '../../config/jitsi.config.ts';
 import type { CreateMeetingDTO, JoinMeetingDTO } from '../types/jitsi.types';
@@ -245,7 +245,7 @@ export class MeetingsService {
 
     try {
       // Solicitar inicio de grabación a Jibri
-      await JibriService.startRecording({
+      await JibriAPIService.startRecording({
         roomName: meeting.roomName,
         recordingId: recording.id,
       });
@@ -297,7 +297,7 @@ export class MeetingsService {
 
     try {
       // Enviar orden a Jibri para detener
-      await JibriService.stopRecording({
+      await JibriAPIService.stopRecording({
         recordingId: activeRecording.id,
       });
 
